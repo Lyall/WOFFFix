@@ -12,7 +12,7 @@ HMODULE thisModule;
 inipp::Ini<char> ini;
 std::shared_ptr<spdlog::logger> logger;
 string sFixName = "WOFFFix";
-string sFixVer = "1.0.0";
+string sFixVer = "0.8.0";
 string sLogFile = "WOFFFix.log";
 string sConfigFile = "WOFFFix.ini";
 string sWindowClassName = "SiliconStudio Inc.";
