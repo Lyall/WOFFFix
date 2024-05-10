@@ -15,6 +15,7 @@ string sFixName = "WOFFFix";
 string sFixVer = "1.0.0";
 string sLogFile = "WOFFFix.log";
 string sConfigFile = "WOFFFix.ini";
+string sWindowClassName = "SiliconStudio Inc.";
 string sExeName;
 filesystem::path sExePath;
 filesystem::path sThisModulePath;
@@ -57,9 +58,8 @@ SafetyHookInline CreateWindowExW_hook{};
 HWND WINAPI CreateWindowExW_hooked(DWORD dwExStyle, LPCWSTR lpClassName, LPCWSTR lpWindowName, DWORD dwStyle, int X, int Y, int nWidth, int nHeight, HWND hWndParent, HMENU hMenu, HINSTANCE hInstance, LPVOID lpParam)
 {
     auto hWnd = CreateWindowExW_hook.stdcall<HWND>(dwExStyle, lpClassName, lpWindowName, dwStyle, X, Y, nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam);
-
     LONG lStyle = GetWindowLong(hWnd, GWL_STYLE);
-    if (bBorderlessMode && (lStyle & WS_POPUP) != WS_POPUP)
+    if ((lStyle & WS_POPUP) != WS_POPUP)
     {
         lStyle &= ~(WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX);
         SetWindowLong(hWnd, GWL_STYLE, lStyle);
@@ -244,7 +244,11 @@ void Resolution()
         spdlog::error("Custom Resolution: Pattern scan failed.");
     }
 
-    CreateWindowExW_hook = safetyhook::create_inline(&CreateWindowExW, reinterpret_cast<void*>(CreateWindowExW_hooked));
+    if (bBorderlessMode)
+    {
+        // Hook CreateWindowExW so we can apply borderless style and maximize
+        CreateWindowExW_hook = safetyhook::create_inline(&CreateWindowExW, reinterpret_cast<void*>(CreateWindowExW_hooked));
+    }
 }
 
 void AspectFOV()
