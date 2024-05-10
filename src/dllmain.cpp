@@ -25,6 +25,7 @@ bool bCustomResolution;
 int iCustomResX;
 int iCustomResY;
 bool bWindowedMode;
+bool bBorderlessMode;
 bool bAspectFix;
 bool bFOVFix;
 bool bHUDFix;
@@ -50,6 +51,24 @@ float fHUDHeightOffset;
 int iResX;
 int iResY;
 float fCurrentFrametime;
+
+// CreateWindowExW Hook
+SafetyHookInline CreateWindowExW_hook{};
+HWND WINAPI CreateWindowExW_hooked(DWORD dwExStyle, LPCWSTR lpClassName, LPCWSTR lpWindowName, DWORD dwStyle, int X, int Y, int nWidth, int nHeight, HWND hWndParent, HMENU hMenu, HINSTANCE hInstance, LPVOID lpParam)
+{
+    auto hWnd = CreateWindowExW_hook.stdcall<HWND>(dwExStyle, lpClassName, lpWindowName, dwStyle, X, Y, nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam);
+
+    LONG lStyle = GetWindowLong(hWnd, GWL_STYLE);
+    if (bBorderlessMode && (lStyle & WS_POPUP) != WS_POPUP)
+    {
+        lStyle &= ~(WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX);
+        SetWindowLong(hWnd, GWL_STYLE, lStyle);
+
+        // Maximize window and put window on top
+        SetWindowPos(hWnd, HWND_TOP, 0, 0, DesktopDimensions.first, DesktopDimensions.second, NULL);
+    }
+    return hWnd;
+}
 
 void Logging()
 {
@@ -121,6 +140,7 @@ void ReadConfig()
     inipp::get_value(ini.sections["Custom Resolution"], "Width", iCustomResX);
     inipp::get_value(ini.sections["Custom Resolution"], "Height", iCustomResY);
     inipp::get_value(ini.sections["Custom Resolution"], "Windowed", bWindowedMode);
+    inipp::get_value(ini.sections["Custom Resolution"], "Borderless", bBorderlessMode);
     inipp::get_value(ini.sections["Fix Aspect Ratio"], "Enabled", bAspectFix);
     inipp::get_value(ini.sections["Fix FOV"], "Enabled", bFOVFix);
     inipp::get_value(ini.sections["Fix HUD"], "Enabled", bHUDFix);
@@ -133,6 +153,12 @@ void ReadConfig()
     spdlog::info("Config Parse: iCustomResX: {}", iCustomResX);
     spdlog::info("Config Parse: iCustomResY: {}", iCustomResY);
     spdlog::info("Config Parse: bWindowedMode: {}", bWindowedMode);
+    spdlog::info("Config Parse: bBorderlessMode: {}", bBorderlessMode);
+    if (bBorderlessMode && !bWindowedMode)
+    {
+        spdlog::info("Config Parse: bBorderlessMode enabled. Enabling bWindowedMode.");
+        bWindowedMode = true;
+    }
     spdlog::info("Config Parse: bAspectFix: {}", bAspectFix);
     spdlog::info("Config Parse: bFOVFix: {}", bFOVFix);
     spdlog::info("Config Parse: bHUDFix: {}", bHUDFix);
@@ -217,6 +243,8 @@ void Resolution()
     {
         spdlog::error("Custom Resolution: Pattern scan failed.");
     }
+
+    CreateWindowExW_hook = safetyhook::create_inline(&CreateWindowExW, reinterpret_cast<void*>(CreateWindowExW_hooked));
 }
 
 void AspectFOV()
@@ -247,27 +275,7 @@ void AspectFOV()
 
     if (bFOVFix)
     {
-        // FOV
-        uint8_t* FOVScanResult = Memory::PatternScan(baseModule, "74 ?? F3 0F ?? ?? ?? ?? ?? 00 F3 0F ?? ?? ?? ?? ?? 00 EB ?? F3 0F ?? ?? ?? ?? ?? 00 F3 0F ?? ?? ?? 8B ?? ?? ?? ?? 00");
-        if (FOVScanResult)
-        {
-            spdlog::info("FOV: Address is {:s}+{:x}", sExeName.c_str(), (uintptr_t)FOVScanResult - (uintptr_t)baseModule);
-
-            static SafetyHookMid FOVMidHook{};
-            FOVMidHook = safetyhook::create_mid(FOVScanResult + 0x1C,
-                [](SafetyHookContext& ctx)
-                {
-                    if (fAspectRatio > fNativeAspect)
-                    {
-                        ctx.xmm0.f32[0] = atanf(tanf(ctx.xmm0.f32[0] * (fPi / 360)) / fNativeAspect * fAspectRatio) * (360 / fPi);
-                    }
-                });
-
-        }
-        else if (!FOVScanResult)
-        {
-            spdlog::error("FOV: Pattern scan failed.");
-        }
+       // Nothing, yet
     }
 }
 
