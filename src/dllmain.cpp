@@ -350,17 +350,26 @@ void Framerate()
 {
     if (bUncapFPS)
     {
-        uint8_t* FPSCap1ScanResult = Memory::PatternScan(baseModule, "EB ?? F3 0F ?? ?? ?? ?? ?? ?? F3 0F ?? ?? ?? ?? F3 0F ?? ?? ?? ?? 48 ?? ?? ?? C3");
-        uint8_t* FPSCap2ScanResult = Memory::PatternScan(baseModule, "F3 0F ?? ?? ?? ?? F3 0F ?? ?? ?? ?? F3 0F ?? ?? ?? ?? 48 ?? ?? ?? ?? ?? ?? 00 83 ?? ?? ?? ?? ?? 00 74 ??");
-        uint8_t* FPSCap3ScanResult = Memory::PatternScan(baseModule, "F3 0F ?? ?? ?? ?? F3 0F ?? ?? ?? ?? F3 0F ?? ?? 0F 28 ?? F3 0F ?? ?? ?? ?? 48 ?? ?? ?? ?? 8B ?? ?? 83 ?? 10");
-        uint8_t* CurrentFrametimeScanResult = Memory::PatternScan(baseModule, "48 8B ?? ?? ?? F3 0F ?? ?? ?? ?? ?? 00 48 8B ?? ?? ?? F3 0F ?? ?? ?? ?? ?? ?? F3 0F ?? ?? ?? ?? ?? ??");
-        if (FPSCap1ScanResult && FPSCap2ScanResult && FPSCap3ScanResult && CurrentFrametimeScanResult)
+        uint8_t* GameSpeed1ScanResult = Memory::PatternScan(baseModule, "EB ?? F3 0F ?? ?? ?? ?? ?? ?? F3 0F ?? ?? ?? ?? F3 0F ?? ?? ?? ?? 48 ?? ?? ?? C3");
+        uint8_t* FPSCapScanResult = Memory::PatternScan(baseModule, "F3 0F ?? ?? ?? ?? F3 0F ?? ?? ?? ?? F3 0F ?? ?? ?? ?? 48 ?? ?? ?? ?? ?? ?? 00 83 ?? ?? ?? ?? ?? 00 74 ??");
+        uint8_t* GameSpeed2ScanResult = Memory::PatternScan(baseModule, "F3 0F ?? ?? ?? ?? F3 0F ?? ?? ?? ?? F3 0F ?? ?? 0F 28 ?? F3 0F ?? ?? ?? ?? 48 ?? ?? ?? ?? 8B ?? ?? 83 ?? 10");
+        uint8_t* CurrentFrametimeScanResult = Memory::PatternScan(baseModule, "F3 0F ?? ?? ?? ?? 48 ?? ?? ?? ?? 48 ?? ?? ?? ?? ?? 48 ?? ?? E8 ?? ?? ?? ?? 48 ?? ?? ?? ?? 83 ?? ?? ?? ?? ?? 00 74 ??");
+        if (GameSpeed1ScanResult && FPSCapScanResult && GameSpeed2ScanResult && CurrentFrametimeScanResult)
         {
-            spdlog::info("Unlock Framerate: 1 Address is {:s}+{:x}", sExeName.c_str(), (uintptr_t)FPSCap1ScanResult - (uintptr_t)baseModule);
-            spdlog::info("Unlock Framerate: 2 Address is {:s}+{:x}", sExeName.c_str(), (uintptr_t)FPSCap2ScanResult - (uintptr_t)baseModule);
-            spdlog::info("Unlock Framerate: 3 Address is {:s}+{:x}", sExeName.c_str(), (uintptr_t)FPSCap3ScanResult - (uintptr_t)baseModule);
-            spdlog::info("Unlock Framerate: Current Frametime: Address is {:s}+{:x}", sExeName.c_str(), (uintptr_t)CurrentFrametimeScanResult - (uintptr_t)baseModule);
+            // Set FPS cap to 0
+            spdlog::info("Unlock Framerate: FPS Cap: Address is {:s}+{:x}", sExeName.c_str(), (uintptr_t)FPSCapScanResult - (uintptr_t)baseModule);
+            static SafetyHookMid FPSCapMidHook{};
+            FPSCapMidHook = safetyhook::create_mid(FPSCapScanResult,
+                [](SafetyHookContext& ctx)
+                {
+                    if (ctx.rsp + 0x3C)
+                    {
+                        *reinterpret_cast<float*>(ctx.rsp + 0x3C) = 0.0f; // Hopefully setting it to 0 doesn't cause problems ;)
+                    }
+                });
 
+            // Grab current frametime
+            spdlog::info("Unlock Framerate: Current Frametime: Address is {:s}+{:x}", sExeName.c_str(), (uintptr_t)CurrentFrametimeScanResult - (uintptr_t)baseModule);
             static SafetyHookMid CurrentFrametimeMidHook{};
             CurrentFrametimeMidHook = safetyhook::create_mid(CurrentFrametimeScanResult,
                 [](SafetyHookContext& ctx)
@@ -368,32 +377,25 @@ void Framerate()
                     fCurrentFrametime = ctx.xmm0.f32[0];
                 });
 
-            static SafetyHookMid FPSCap1MidHook{};
-            FPSCap1MidHook = safetyhook::create_mid(FPSCap1ScanResult + 0x16,
+            // Game speed (3D stuff)
+            spdlog::info("Unlock Framerate: Game Speed 1: Address is {:s}+{:x}", sExeName.c_str(), (uintptr_t)GameSpeed1ScanResult - (uintptr_t)baseModule);
+            static SafetyHookMid GameSpeed1MidHook{};
+            GameSpeed1MidHook = safetyhook::create_mid(GameSpeed1ScanResult + 0x16,
                 [](SafetyHookContext& ctx)
                 {
                     ctx.xmm0.f32[0] = 1000.0f / fCurrentFrametime;
                 });
 
-            static SafetyHookMid FPSCap2MidHook{};
-            FPSCap2MidHook = safetyhook::create_mid(FPSCap2ScanResult,
-                [](SafetyHookContext& ctx)
-                {
-                    if (ctx.rsp + 0x3C)
-                    {
-                        // Framerate cap
-                        *reinterpret_cast<float*>(ctx.rsp + 0x3C) = 0.0f; // Hopefully setting it to 0 doesn't cause problems ;)
-                    }
-                });
-
-            static SafetyHookMid FPSCap3MidHook{};
-            FPSCap3MidHook = safetyhook::create_mid(FPSCap3ScanResult,
+            // Game speed (animations?)
+            spdlog::info("Unlock Framerate: Game Speed 2: Address is {:s}+{:x}", sExeName.c_str(), (uintptr_t)GameSpeed2ScanResult - (uintptr_t)baseModule);
+            static SafetyHookMid GameSpeed2MidHook{};
+            GameSpeed2MidHook = safetyhook::create_mid(GameSpeed2ScanResult,
                 [](SafetyHookContext& ctx)
                 {
                     ctx.xmm0.f32[0] = (1000.0f / fCurrentFrametime) / 30.0f;
                 });
         }
-        else if (!FPSCap1ScanResult || !FPSCap2ScanResult || !FPSCap3ScanResult || !CurrentFrametimeScanResult)
+        else if (!FPSCapScanResult || !GameSpeed1ScanResult || !GameSpeed2ScanResult || !CurrentFrametimeScanResult)
         {
             spdlog::error("Unlock Framerate: Pattern scan failed.");
         }
