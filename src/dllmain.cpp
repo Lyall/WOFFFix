@@ -278,34 +278,39 @@ void Resolution()
 
 void AspectFOV()
 {
-    if (bAspectFix)
-    {
-        // Aspect Ratio
-        uint8_t* AspectRatioScanResult = Memory::PatternScan(baseModule, "F3 0F ?? ?? ?? ?? ?? 00 F3 0F ?? ?? ?? ?? 0F 28 ?? 48 8B ?? ?? ?? ?? ?? 00");
-        if (AspectRatioScanResult)
+        // Aspect Ratio + FOV
+        uint8_t* AspectRatioFOVScanResult = Memory::PatternScan(baseModule, "F3 0F ?? ?? ?? ?? ?? 00 F3 0F ?? ?? ?? ?? 0F 28 ?? 48 8B ?? ?? ?? ?? ?? 00");
+        if (AspectRatioFOVScanResult)
         {
-            spdlog::info("Aspect Ratio: Address is {:s}+{:x}", sExeName.c_str(), (uintptr_t)AspectRatioScanResult - (uintptr_t)baseModule);
+            spdlog::info("Aspect Ratio/FOV: Address is {:s}+{:x}", sExeName.c_str(), (uintptr_t)AspectRatioFOVScanResult - (uintptr_t)baseModule);
 
             static SafetyHookMid AspectRatioMidHook{};
-            AspectRatioMidHook = safetyhook::create_mid(AspectRatioScanResult,
+            AspectRatioMidHook = safetyhook::create_mid(AspectRatioFOVScanResult,
                 [](SafetyHookContext& ctx)
                 {
-                    if (ctx.rax + 0x280)
+                    if (ctx.rax + 0x280 && bAspectFix)
                     {
                         *reinterpret_cast<float*>(ctx.rax + 0x280) = fAspectRatio;
                     }
                 });
-        }
-        else if (!AspectRatioScanResult)
-        {
-            spdlog::error("Aspect Ratio: Pattern scan failed.");
-        }
-    }
 
-    if (bFOVFix)
-    {
-       // Nothing, yet
-    }
+            static SafetyHookMid FOVMidHook{};
+            FOVMidHook = safetyhook::create_mid(AspectRatioFOVScanResult - 0x31,
+                [](SafetyHookContext& ctx)
+                {
+                    if (ctx.rcx + 0x284 && bFOVFix)
+                    {
+                        if (fAspectRatio < fNativeAspect)
+                        {
+                            ctx.xmm0.f32[0] = atanf(tanf(ctx.xmm0.f32[0] * (fPi / 360)) / fAspectRatio * fNativeAspect) * (360 / fPi);
+                        }
+                    }
+                });
+        }
+        else if (!AspectRatioFOVScanResult)
+        {
+            spdlog::error("Aspect Ratio/FOV: Pattern scan failed.");
+        }
 }
 
 void HUD()
