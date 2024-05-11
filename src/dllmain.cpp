@@ -73,8 +73,12 @@ HWND WINAPI CreateWindowExW_hooked(DWORD dwExStyle, LPCWSTR lpClassName, LPCWSTR
 
         // Maximize window and put window on top
         SetWindowPos(hWnd, HWND_TOP, 0, 0, DesktopDimensions.first, DesktopDimensions.second, NULL);
+
         spdlog::info("CreateWindowExW_hook: Set borderless mode and maximized window.");
     }
+
+    // Set window focus
+    SetFocus(hWnd);
 
     return hWnd;
 }
