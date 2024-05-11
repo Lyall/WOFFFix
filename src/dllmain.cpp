@@ -60,7 +60,7 @@ HWND WINAPI CreateWindowExW_hooked(DWORD dwExStyle, LPCWSTR lpClassName, LPCWSTR
 {
     auto hWnd = CreateWindowExW_hook.stdcall<HWND>(dwExStyle, lpClassName, lpWindowName, dwStyle, X, Y, nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam);
 
-    // This is jank, replace this.
+    // This is jank, probably better to compare class name?
     iCreateWindowCount++;
     if (iCreateWindowCount < 2)
     {
@@ -266,8 +266,9 @@ void Resolution()
     {
         // Hook CreateWindowExW so we can apply borderless style and maximize
         CreateWindowExW_hook = safetyhook::create_inline(&CreateWindowExW, reinterpret_cast<void*>(CreateWindowExW_hooked));
-        LoadCursorW_hook = safetyhook::create_inline(&LoadCursorW, reinterpret_cast<void*>(LoadCursorW_hooked));
     }
+    // Hide mouse cursor
+    LoadCursorW_hook = safetyhook::create_inline(&LoadCursorW, reinterpret_cast<void*>(LoadCursorW_hooked));
 }
 
 void AspectFOV()
