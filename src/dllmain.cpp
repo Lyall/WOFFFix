@@ -84,6 +84,7 @@ SafetyHookInline LoadCursorW_hook{};
 HCURSOR WINAPI LoadCursorW_hooked(HINSTANCE hInstance, LPCWSTR name)
 {
     // Disable mouse cursor
+    spdlog::info("LoadCursorW_hook: Disabled ShowCursor.");
     ShowCursor(false);
     return LoadCursorW_hook.stdcall<HCURSOR>(hInstance, name);
 }
