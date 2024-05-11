@@ -52,22 +52,40 @@ float fHUDHeightOffset;
 int iResX;
 int iResY;
 float fCurrentFrametime;
+int iCreateWindowCount;
 
 // CreateWindowExW Hook
 SafetyHookInline CreateWindowExW_hook{};
 HWND WINAPI CreateWindowExW_hooked(DWORD dwExStyle, LPCWSTR lpClassName, LPCWSTR lpWindowName, DWORD dwStyle, int X, int Y, int nWidth, int nHeight, HWND hWndParent, HMENU hMenu, HINSTANCE hInstance, LPVOID lpParam)
 {
     auto hWnd = CreateWindowExW_hook.stdcall<HWND>(dwExStyle, lpClassName, lpWindowName, dwStyle, X, Y, nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam);
-    LONG lStyle = GetWindowLong(hWnd, GWL_STYLE);
-    if ((lStyle & WS_POPUP) != WS_POPUP)
+
+    // This is jank, replace this.
+    iCreateWindowCount++;
+    if (iCreateWindowCount < 2)
     {
-        lStyle &= ~(WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX);
-        SetWindowLong(hWnd, GWL_STYLE, lStyle);
+        LONG lStyle = GetWindowLong(hWnd, GWL_STYLE);
+        if ((lStyle & WS_POPUP) != WS_POPUP)
+        {
+            lStyle &= ~(WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX);
+            SetWindowLong(hWnd, GWL_STYLE, lStyle);
+        }
 
         // Maximize window and put window on top
         SetWindowPos(hWnd, HWND_TOP, 0, 0, DesktopDimensions.first, DesktopDimensions.second, NULL);
+        spdlog::info("CreateWindowExW_hook: Set borderless mode and maximized window.");
     }
+
     return hWnd;
+}
+
+HCURSOR hCursor;
+SafetyHookInline LoadCursorW_hook{};
+HCURSOR WINAPI LoadCursorW_hooked(HINSTANCE hInstance, LPCWSTR name)
+{
+    // Disable mouse cursor
+    ShowCursor(false);
+    return LoadCursorW_hook.stdcall<HCURSOR>(hInstance, name);
 }
 
 void Logging()
@@ -248,6 +266,7 @@ void Resolution()
     {
         // Hook CreateWindowExW so we can apply borderless style and maximize
         CreateWindowExW_hook = safetyhook::create_inline(&CreateWindowExW, reinterpret_cast<void*>(CreateWindowExW_hooked));
+        LoadCursorW_hook = safetyhook::create_inline(&LoadCursorW, reinterpret_cast<void*>(LoadCursorW_hooked));
     }
 }
 
