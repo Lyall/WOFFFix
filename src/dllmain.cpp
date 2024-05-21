@@ -324,34 +324,24 @@ void HUD()
 {
     if (bHUDFix)
     {
-        uint8_t* HUDWidthOffsetScanResult = Memory::PatternScan(baseModule, "F3 0F ?? ?? ?? ?? ?? ?? 48 8D ?? ?? F3 0F ?? ?? 48 89 ?? ?? ?? F3 0F ?? ?? ?? ?? ?? ?? 48 8D ?? ?? ?? ?? ??");
-        uint8_t* HUDWidthScanResult = Memory::PatternScan(baseModule, "0F ?? ?? F3 0F ?? ?? ?? ?? E8 ?? ?? ?? ?? F3 0F ?? ?? ?? ?? ?? ?? F3 0F ?? ?? ?? ?? ?? ?? 0F 28 ?? ?? ?? ?? ??");
-        if (HUDWidthOffsetScanResult && HUDWidthScanResult)
+        uint8_t* HUDWidthScanResult = Memory::PatternScan(baseModule, "41 ?? ?? ?? 0F ?? ?? F3 0F ?? ?? ?? ?? E8 ?? ?? ?? ??") + 0x4;
+        if (HUDWidthScanResult)
         {
-            spdlog::info("HUD: Width Offset: Address is {:s}+{:x}", sExeName.c_str(), (uintptr_t)HUDWidthOffsetScanResult - (uintptr_t)baseModule);
             spdlog::info("HUD: Width: Address is {:s}+{:x}", sExeName.c_str(), (uintptr_t)HUDWidthScanResult - (uintptr_t)baseModule);
-
-            static SafetyHookMid HUDWidthOffsetMidHook{};
-            HUDWidthOffsetMidHook = safetyhook::create_mid(HUDWidthOffsetScanResult,
-                [](SafetyHookContext& ctx)
-                {
-                    if (fAspectRatio > fNativeAspect)
-                    {
-                        ctx.xmm1.f32[0] = ceilf((float)((540 * fAspectRatio) - 960) / 4);
-                    }
-                });
-
             static SafetyHookMid HUDWidthMidHook{};
-            HUDWidthMidHook = safetyhook::create_mid(HUDWidthScanResult + 0x3,
+            HUDWidthMidHook = safetyhook::create_mid(HUDWidthScanResult,
                 [](SafetyHookContext& ctx)
                 {
                     if (fAspectRatio > fNativeAspect)
                     {
-                        ctx.xmm2.f32[0] = ceilf((float)(540 * fAspectRatio));
+                        float HUDWidth = ceilf((float)544 * fAspectRatio);
+                        float HUDWidthOffset = ceilf((HUDWidth - 960.00f) / 2.00f);
+                        ctx.xmm2.u32[0] = (int)ceilf(HUDWidth - HUDWidthOffset);
+                        ctx.xmm1.f32[0] = -HUDWidthOffset;
                     }
                 });
         }
-        else if (!HUDWidthOffsetScanResult || !HUDWidthScanResult)
+        else if (!HUDWidthScanResult)
         {
             spdlog::error("HUD: Pattern scan failed.");
         }
