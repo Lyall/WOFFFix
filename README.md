@@ -2,12 +2,15 @@
 [![Patreon-Button](https://github.com/Lyall/WOFFFix/assets/695941/19c468ac-52af-4790-b4eb-5187c06af949)](https://www.patreon.com/Wintermance) [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/W7W01UAI9)<br />
 [![Github All Releases](https://img.shields.io/github/downloads/Lyall/WOFFFix/total.svg)](https://github.com/Lyall/WOFFFix/releases)
 
-This is a fix for World of Final Fantasy that adds support for custom resolutions, ultrawide and more.
+This is a fix for World of Final Fantasy that adds support for custom resolutions, ultrawide displays and more.
 
 ## Features
 - Custom resolution support.
 - Ultrawide/narrow aspect ratio support.
 - Correct FOV at any aspect ratio.
+- Centred 16:9 HUD.
+- Borderless fullscreen.
+- Hide mouse cursor.
 
 ## Installation
 - Grab the latest release of WOFFFix from [here.](https://github.com/Lyall/WOFFFix/releases)
