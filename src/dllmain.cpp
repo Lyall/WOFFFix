@@ -30,6 +30,7 @@ bool bBorderlessMode;
 bool bAspectFix;
 bool bFOVFix;
 bool bHUDFix;
+bool bHideCursor;
 bool bUncapFPS;
 bool bShadowRes;
 int iShadowRes;
@@ -167,6 +168,7 @@ void ReadConfig()
     inipp::get_value(ini.sections["Fix Aspect Ratio"], "Enabled", bAspectFix);
     inipp::get_value(ini.sections["Fix FOV"], "Enabled", bFOVFix);
     inipp::get_value(ini.sections["Fix HUD"], "Enabled", bHUDFix);
+    inipp::get_value(ini.sections["Hide Mouse Cursor"], "Enabled", bHideCursor);
     inipp::get_value(ini.sections["Unlock Framerate"], "Enabled", bUncapFPS);
     inipp::get_value(ini.sections["Shadow Resolution"], "Enabled", bShadowRes);
     inipp::get_value(ini.sections["Shadow Resolution"], "Resolution", iShadowRes);
@@ -185,6 +187,7 @@ void ReadConfig()
     spdlog::info("Config Parse: bAspectFix: {}", bAspectFix);
     spdlog::info("Config Parse: bFOVFix: {}", bFOVFix);
     spdlog::info("Config Parse: bHUDFix: {}", bHUDFix);
+    spdlog::info("Config Parse: bHideCursor: {}", bHideCursor);
     spdlog::info("Config Parse: bUncapFPS: {}", bUncapFPS);
     spdlog::info("Config Parse: bShadowRes: {}", bShadowRes);
     spdlog::info("Config Parse: iShadowRes: {}", iShadowRes);
@@ -272,8 +275,12 @@ void Resolution()
         // Hook CreateWindowExW so we can apply borderless style and maximize
         CreateWindowExW_hook = safetyhook::create_inline(&CreateWindowExW, reinterpret_cast<void*>(CreateWindowExW_hooked));
     }
-    // Hide mouse cursor
-    LoadCursorW_hook = safetyhook::create_inline(&LoadCursorW, reinterpret_cast<void*>(LoadCursorW_hooked));
+
+    if (bHideCursor)
+    {
+        // Hide mouse cursor
+        LoadCursorW_hook = safetyhook::create_inline(&LoadCursorW, reinterpret_cast<void*>(LoadCursorW_hooked));
+    }
 }
 
 void AspectFOV()
