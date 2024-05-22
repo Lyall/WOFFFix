@@ -29,6 +29,7 @@ Please report any issues you see.
 This list will contain bugs which may or may not be fixed.
 
 - Removing the 30fps cap causes text to speed up. It may also cause numerous other issues.
+- When removing the framerate cap, cutscenes are still animated at 30fps.
 - When using the HUD fix, you may see uncovered UI at the top/bottom/sides.
 
 ## Screenshots
