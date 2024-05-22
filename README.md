@@ -11,7 +11,7 @@ This is a fix for World of Final Fantasy that adds support for custom resolution
 - Centred 16:9 HUD.
 - Borderless fullscreen.
 - Hide mouse cursor.
-- (EXPERIMENTAL) Remove 30fps framerate cap.
+- (EXPERIMENTAL) Remove 30fps and allow dynamic game speed.
 
 ## Installation
 - Grab the latest release of WOFFFix from [here.](https://github.com/Lyall/WOFFFix/releases)
