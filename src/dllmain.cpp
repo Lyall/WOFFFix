@@ -324,12 +324,13 @@ void HUD()
 {
     if (bHUDFix)
     {
-        uint8_t* HUDWidthScanResult = Memory::PatternScan(baseModule, "41 ?? ?? ?? 0F ?? ?? F3 0F ?? ?? ?? ?? E8 ?? ?? ?? ??") + 0x4;
-        if (HUDWidthScanResult)
+        uint8_t* HUDScanResult = Memory::PatternScan(baseModule, "41 ?? ?? ?? 0F ?? ?? F3 0F ?? ?? ?? ?? E8 ?? ?? ?? ??") + 0x4;
+        if (HUDScanResult)
         {
-            spdlog::info("HUD: Width: Address is {:s}+{:x}", sExeName.c_str(), (uintptr_t)HUDWidthScanResult - (uintptr_t)baseModule);
-            static SafetyHookMid HUDWidthMidHook{};
-            HUDWidthMidHook = safetyhook::create_mid(HUDWidthScanResult,
+            spdlog::info("HUD: Address is {:s}+{:x}", sExeName.c_str(), (uintptr_t)HUDScanResult - (uintptr_t)baseModule);
+
+            static SafetyHookMid HUDMidHook{};
+            HUDMidHook = safetyhook::create_mid(HUDScanResult,
                 [](SafetyHookContext& ctx)
                 {
                     if (fAspectRatio > fNativeAspect)
@@ -339,9 +340,16 @@ void HUD()
                         ctx.xmm2.u32[0] = (int)ceilf(HUDWidth - HUDWidthOffset);
                         ctx.xmm1.f32[0] = -HUDWidthOffset;
                     }
+                    else if (fAspectRatio < fNativeAspect)
+                    {
+                        float HUDHeight = ceilf((float)960 / fAspectRatio);
+                        float HUDHeightOffset = ceilf((HUDHeight - 544.00f) / 2.00f);
+                        ctx.xmm0.f32[0] = ceilf(HUDHeight - HUDHeightOffset);
+                        ctx.xmm3.f32[0] = -HUDHeightOffset;
+                    }
                 });
         }
-        else if (!HUDWidthScanResult)
+        else if (!HUDScanResult)
         {
             spdlog::error("HUD: Pattern scan failed.");
         }
