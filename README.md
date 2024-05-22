@@ -28,6 +28,9 @@ This is a fix for World of Final Fantasy that adds support for custom resolution
 Please report any issues you see.
 This list will contain bugs which may or may not be fixed.
 
+- Removing the 30fps cap causes text to speed up. It may also cause numerous other potential issues.
+- When using the HUD fix, you may see uncovered UI at the top/bottom/sides.
+
 ## Screenshots
 
 | |
