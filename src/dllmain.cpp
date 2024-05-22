@@ -278,58 +278,13 @@ void Resolution()
 
     if (bHideCursor)
     {
-        // Hide mouse cursor
+        // Hook LoadCursorW to hide mouse cursor
         LoadCursorW_hook = safetyhook::create_inline(&LoadCursorW, reinterpret_cast<void*>(LoadCursorW_hooked));
     }
 }
 
 void AspectFOV()
 {
-    if (bFOVFix)
-    {
-        // Gameplay FOV
-        uint8_t* GameplayFOVScanResult = Memory::PatternScan(baseModule, "F3 ?? ?? ?? ?? ?? ?? ?? ?? 0F ?? ?? ?? ?? ?? ?? 0F ?? ?? ?? ?? ?? ?? 76 ?? 0F ?? ?? 0F ?? ?? F3 0F ?? ?? ?? ?? ?? ?? 73 ??");
-        if (GameplayFOVScanResult)
-        {
-            spdlog::info("Gameplay FOV: Address is {:s}+{:x}", sExeName.c_str(), (uintptr_t)GameplayFOVScanResult - (uintptr_t)baseModule);
-            static SafetyHookMid GameplayFOVMidHook{};
-            GameplayFOVMidHook = safetyhook::create_mid(GameplayFOVScanResult,
-                [](SafetyHookContext& ctx)
-                {
-                    if (fAspectRatio < fNativeAspect)
-                    {
-                        ctx.xmm8.f32[0] = atanf(tanf(ctx.xmm8.f32[0] * (fPi / 360)) / fAspectRatio * fNativeAspect) * (360 / fPi);
-                    }
-                });        
-        }
-        else if (!GameplayFOVScanResult)
-        {
-            spdlog::error("Gameplay FOV: Pattern scan failed.");
-        }
-
-        // Cutscene FOV
-        uint8_t* CutsceneFOVScanResult = Memory::PatternScan(baseModule, "89 ?? ?? ?? ?? ?? F3 ?? ?? ?? ?? 41 ?? ?? ?? F3 ?? ?? ?? ?? F3 0F ?? ?? 0F ?? ??");
-        if (CutsceneFOVScanResult)
-        {
-            spdlog::info("Cutscene FOV: Address is {:s}+{:x}", sExeName.c_str(), (uintptr_t)CutsceneFOVScanResult - (uintptr_t)baseModule);
-            static SafetyHookMid CutsceneFOVMidHook{};
-            CutsceneFOVMidHook = safetyhook::create_mid(CutsceneFOVScanResult,
-                [](SafetyHookContext& ctx)
-                {
-                    if (fAspectRatio < fNativeAspect)
-                    {
-                        float fov = *reinterpret_cast<float*>(&ctx.rax);
-                        float newFov = atanf(tanf(fov * (fPi / 360)) / fAspectRatio * fNativeAspect) * (360 / fPi);
-                        ctx.rax = *(uint32_t*)&newFov;
-                    }
-                });
-        }
-        else if (!CutsceneFOVScanResult)
-        {
-            spdlog::error("Cutscene FOV: Pattern scan failed.");
-        }
-    }
-
     if (bAspectFix)
     {
         // Aspect Ratio
@@ -351,6 +306,43 @@ void AspectFOV()
         else if (!AspectRatioScanResult)
         {
             spdlog::error("Aspect Ratio: Pattern scan failed.");
+        }
+    }
+
+    if (bFOVFix)
+    {
+        // FOV
+        uint8_t* GameplayFOVScanResult = Memory::PatternScan(baseModule, "F3 ?? ?? ?? ?? ?? ?? ?? ?? 0F ?? ?? ?? ?? ?? ?? 0F ?? ?? ?? ?? ?? ?? 76 ?? 0F ?? ?? 0F ?? ?? F3 0F ?? ?? ?? ?? ?? ?? 73 ??");
+        uint8_t* CutsceneFOVScanResult = Memory::PatternScan(baseModule, "89 ?? ?? ?? ?? ?? F3 ?? ?? ?? ?? 41 ?? ?? ?? F3 ?? ?? ?? ?? F3 0F ?? ?? 0F ?? ??");
+        if (GameplayFOVScanResult && CutsceneFOVScanResult)
+        {
+            spdlog::info("Gameplay FOV: Address is {:s}+{:x}", sExeName.c_str(), (uintptr_t)GameplayFOVScanResult - (uintptr_t)baseModule);
+            static SafetyHookMid GameplayFOVMidHook{};
+            GameplayFOVMidHook = safetyhook::create_mid(GameplayFOVScanResult,
+                [](SafetyHookContext& ctx)
+                {
+                    if (fAspectRatio < fNativeAspect)
+                    {
+                        ctx.xmm8.f32[0] = atanf(tanf(ctx.xmm8.f32[0] * (fPi / 360)) / fAspectRatio * fNativeAspect) * (360 / fPi);
+                    }
+                }); 
+
+            spdlog::info("Cutscene FOV: Address is {:s}+{:x}", sExeName.c_str(), (uintptr_t)CutsceneFOVScanResult - (uintptr_t)baseModule);
+            static SafetyHookMid CutsceneFOVMidHook{};
+            CutsceneFOVMidHook = safetyhook::create_mid(CutsceneFOVScanResult,
+                [](SafetyHookContext& ctx)
+                {
+                    if (fAspectRatio < fNativeAspect)
+                    {
+                        float fov = *reinterpret_cast<float*>(&ctx.rax);
+                        float newFov = atanf(tanf(fov * (fPi / 360)) / fAspectRatio * fNativeAspect) * (360 / fPi);
+                        ctx.rax = *(uint32_t*)&newFov;
+                    }
+                });
+        }
+        else if (!GameplayFOVScanResult || !CutsceneFOVScanResult)
+        {
+            spdlog::error("FOV: Pattern scan failed.");
         }
     }
 }
@@ -461,13 +453,6 @@ void GraphicalTweaks()
             ShadowResMidHook = safetyhook::create_mid(ShadowResScanResult,
                 [](SafetyHookContext& ctx)
                 {
-                    /*
-                    if (ctx.rsi + 0x20)
-                    {
-                        // MSAA, does not work
-                        *reinterpret_cast<int*>(ctx.rsi + 0x20) = 17;
-                    }
-                    */
                     ctx.rax = (int)8192;
                 });
         }
