@@ -1,5 +1,5 @@
 # World of Final Fantasy Fix
-[![Patreon-Button](https://github.com/Lyall/WOFFFix/assets/695941/19c468ac-52af-4790-b4eb-5187c06af949)](https://www.patreon.com/Wintermance) [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/W7W01UAI9)<br />
+[![Patreon-Button](https://github.com/Lyall/WOFFFix/assets/695941/b455ae7b-a39a-4193-9a95-e486575f2554)](https://www.patreon.com/Wintermance) [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/W7W01UAI9)<br />
 [![Github All Releases](https://img.shields.io/github/downloads/Lyall/WOFFFix/total.svg)](https://github.com/Lyall/WOFFFix/releases)
 
 This is a fix for World of Final Fantasy that adds support for custom resolutions, ultrawide displays and more.
