@@ -30,7 +30,7 @@ This list will contain bugs which may or may not be fixed.
 
 ## Screenshots
 
-| |
+| ![ezgif-2-f4932dc17d](https://github.com/Lyall/WOFFFix/assets/695941/5716a99d-db4f-4079-8246-ee51dda4df26) |
 |:--:|
 | Gameplay |
 
