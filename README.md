@@ -11,7 +11,7 @@ This is a fix for World of Final Fantasy that adds support for custom resolution
 - Centred 16:9 HUD.
 - Borderless fullscreen.
 - Hide mouse cursor.
-- (EXPERIMENTAL) Remove 30fps and allow dynamic game speed.
+- (EXPERIMENTAL) Remove 30fps cap and allow dynamic game speed.
 
 ## Installation
 - Grab the latest release of WOFFFix from [here.](https://github.com/Lyall/WOFFFix/releases)
@@ -19,6 +19,7 @@ This is a fix for World of Final Fantasy that adds support for custom resolution
 
 ### Steam Deck/Linux Additional Instructions
 🚩**You do not need to do this if you are using Windows!**
+- If using the Steam Deck, I recommend disabling the "Fix HUD" option in **WOFFFix.ini** as the HUD will only be slightly stretched vertically.
 - Open up the game properties in Steam and add `WINEDLLOVERRIDES="dinput8=n,b" %command%` to the launch options.
 
 ## Configuration
@@ -28,9 +29,13 @@ This is a fix for World of Final Fantasy that adds support for custom resolution
 Please report any issues you see.
 This list will contain bugs which may or may not be fixed.
 
-- Removing the 30fps cap causes text to speed up. It may also cause numerous other issues.
-- When removing the framerate cap, cutscenes are still animated at 30fps.
-- When using the HUD fix, you may see uncovered UI at the top/bottom/sides.
+#### Framerate Cap Issues
+- Some text is displayed at an increased speed.
+- Menu interactions/inputs are sped up.
+- Cutscenes are still animated at 30fps (not sure if this can be fixed).
+
+#### HUD Issues
+- When using the HUD fix, you may see uncovered UI at the top/bottom/sides. This is most easily seen in certain menus and with the minimap.
 
 ## Screenshots
 
