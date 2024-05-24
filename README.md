@@ -30,7 +30,6 @@ Please report any issues you see.
 This list will contain bugs which may or may not be fixed.
 
 #### Framerate Cap Issues
-- Some text is displayed at an increased speed.
 - Menu interactions/inputs are sped up.
 - Cutscenes are still animated at 30fps (not sure if this can be fixed).
 
